@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sell Medicine - Pharmacy</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="center-page">
+    <div class="card-container" style="text-align:center;">
+        <h2>Sell Medicine</h2>
+
+        <p class="error" id="errorMsg" style="display:none;"></p>
+
+        <div class="info-box">
+            <p><strong>Medicine:</strong> <span id="medName"></span></p>
+            <p><strong>Current Stock:</strong> <span id="medStock"></span> units</p>
+        </div>
+
+        <form id="sellForm">
+            <label>Quantity to Sell</label>
+            <input type="number" name="qty" id="qtyInput" min="1" required>
+            <button type="submit" class="btn-green">Confirm Sale</button>
+        </form>
+
+        <a href="view.html" class="cancel-link">← Cancel</a>
+    </div>
+
+    <script src="assets/js/api.js"></script>
+    <script>
+        requireLogin();
+        const id = new URLSearchParams(window.location.search).get("id");
+        if (!id) window.location.href = "view.html";
+
+        let medicine;
+        api("/medicine.php?id=" + id).then((m) => {
+            medicine = m;
+            document.getElementById("medName").textContent = m.name;
+            document.getElementById("medStock").textContent = m.quantity;
+            document.getElementById("qtyInput").max = m.quantity;
+        }).catch((err) => alert(err.message));
+
+        document.getElementById("sellForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById("errorMsg");
+            errEl.style.display = "none";
+            const qty = parseInt(document.getElementById("qtyInput").value, 10);
+            try {
+                const result = await api("/sell.php", { method: "POST", body: { id: parseInt(id, 10), qty } });
+                window.location.href = "view.html?msg=" + encodeURIComponent(`Sale recorded successfully! ${money(result.total_amount)} sold.`);
+            } catch (err) {
+                errEl.textContent = err.message;
+                errEl.style.display = "block";
+            }
+        });
+    </script>
+</body>
+</html>
